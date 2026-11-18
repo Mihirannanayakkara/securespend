@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: securespend
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d securespend"]
+      interval: 5s
+      retries: 10
+  api:
+    build: ./api
+    environment:
+      ConnectionStrings__Default: Host=db;Database=securespend;Username=${DB_USER};Password=${DB_PASSWORD}
+      Jwt__Key: ${JWT_KEY}
+      Admin__Email: ${ADMIN_EMAIL:-}
+      Admin__Password: ${ADMIN_PASSWORD:-}
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8080:8080"]   # remove in production; web proxies /api
+  web:
+    build: ./web
+    ports: ["3000:8080"]
+    depends_on: [api]
+volumes:
+  dbdata:
