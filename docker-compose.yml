@@ -19,7 +19,7 @@ services:
       Admin__Password: ${ADMIN_PASSWORD:-}
     depends_on:
       db: { condition: service_healthy }
-    ports: ["8080:8080"]   # remove in production; web proxies /api
+    ports: ["8095:8080"]   # remove in production; web proxies /api
   web:
     build: ./web
     ports: ["3000:8080"]

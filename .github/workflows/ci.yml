@@ -2,20 +2,27 @@ name: CI
 on: [push, pull_request]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-dotnet@v4
         with: { dotnet-version: '8.0.x' }
       - run: dotnet build api --configuration Release
       - run: dotnet test api.Tests
+
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: cd web && npm install && npm run build
+
       - name: Build images
         run: |
           docker build -t securespend-api api
           docker build -t securespend-web web
-      - name: Scan images (Trivy)
-        uses: aquasecurity/trivy-action@0.24.0
-        with: { image-ref: securespend-api, severity: 'CRITICAL,HIGH', exit-code: '0' }
+
+      - name: Scan images with Trivy
+        run: |
+          for img in securespend-api securespend-web; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 0 $img
+          done
