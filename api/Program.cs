@@ -33,7 +33,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope()) {
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
-    db.Database.EnsureCreated(); // switch to EF migrations before production
+    if (db.Database.IsRelational()) db.Database.Migrate();   // real Postgres: apply migrations
+    else db.Database.EnsureCreated();                        // in-memory database used by the tests
     await Seed.AdminAsync(db, builder.Configuration);
 }
 
